@@ -1,0 +1,136 @@
+---
+title: "Assignment 1 FoML"
+author: "Zach Ours"
+date: "2026-09-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+For this assignment, I will use NFL play-by-play data from the nflverse project.I chose this dataset because I am interested in sports analytics and wanted to explore the relationship between different statistics from NFL plays.
+
+```{r}
+library(nflreadr)
+library(dplyr)
+```
+
+
+
+```{r}
+# Source: nflverse NFL play-by-play data
+nfl_data <- load_pbp(2025)
+```
+
+
+## View the Data
+
+```{r}
+head(nfl_data)
+```
+
+
+```{r}
+dim(nfl_data)
+```
+
+
+## Select Variables
+
+```{r}
+nfl_small <- nfl_data %>%
+  select(
+    posteam,
+    defteam,
+    play_type,
+    yards_gained,
+    air_yards,
+    yards_after_catch,
+    down
+  )
+```
+
+
+```{r}
+head(nfl_small)
+```
+
+
+
+## Descriptive Statistics
+
+### Quantitative Variables
+
+```{r}
+summary(nfl_small$yards_gained)
+```
+
+```{r}
+summary(nfl_small$air_yards)
+```
+
+
+### Categorical Variables
+
+```{r}
+table(nfl_small$play_type)
+```
+
+```{r}
+table(nfl_small$posteam)
+```
+
+
+## Variable Transformation
+
+A new variable called `big_play` was created. A play is classified as a big play if it gained at least 20 yards.
+
+```{r}
+nfl_small <- nfl_small %>%
+  mutate(
+    big_play = ifelse(yards_gained >= 20, "Yes", "No")
+  )
+```
+
+
+```{r}
+table(nfl_small$big_play)
+```
+
+
+## Histogram
+
+The following histogram shows the distribution of yards gained per play. Most plays fall within a relatively small range of yards gained, while larger gains occur less frequently.
+
+```{r}
+hist(
+  nfl_small$yards_gained[nfl_small$yards_gained >= -20 &
+                           nfl_small$yards_gained <= 50],
+  main = "Distribution of Yards Gained",
+  xlab = "Yards Gained"
+)
+```
+
+
+## Scatterplot
+
+The following scatterplot compares air yards to total yards gained.
+
+```{r}
+plot(
+  nfl_small$air_yards,
+  nfl_small$yards_gained,
+  main = "Air Yards vs. Yards Gained",
+  xlab = "Air Yards",
+  ylab = "Yards Gained",
+  pch = 19
+)
+```
+
+The scatterplot shows a general positive relationship between air yards and total yards gained. Passes thrown farther downfield often result in more total yards, although there is considerable variation between individual plays.
+
+## Conclusion
+
+In this assignment, I used R to analyze NFL play-by-play data from the 2025 season. I selected quantitative and categorical variables, calculated descriptive statistics, transformed the yards gained variable to identify big plays, and created a histogram and scatterplot to visualize the data.
