@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Setup
+
 For this assignment, I will use NFL play-by-play data from the nflverse project.I chose this dataset because I am interested in sports analytics and wanted to explore the relationship between different statistics from NFL plays.
 
 ```{r}
@@ -25,7 +25,7 @@ nfl_data <- load_pbp(2025)
 ```
 
 
-## View the Data
+
 
 ```{r}
 head(nfl_data)
@@ -37,7 +37,7 @@ dim(nfl_data)
 ```
 
 
-## Select Variables
+
 
 ```{r}
 nfl_small <- nfl_data %>%
@@ -58,8 +58,6 @@ head(nfl_small)
 ```
 
 
-
-## Descriptive Statistics
 
 ### Quantitative Variables
 

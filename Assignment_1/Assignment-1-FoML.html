@@ -357,8 +357,6 @@ display: none;
 </div>
 
 
-<div id="setup" class="section level2">
-<h2>Setup</h2>
 <p>For this assignment, I will use NFL play-by-play data from the
 nflverse project.I chose this dataset because I am interested in sports
 analytics and wanted to explore the relationship between different
@@ -375,9 +373,6 @@ library(dplyr)</code></pre>
 ##     intersect, setdiff, setequal, union</code></pre>
 <pre class="r"><code># Source: nflverse NFL play-by-play data
 nfl_data &lt;- load_pbp(2025)</code></pre>
-</div>
-<div id="view-the-data" class="section level2">
-<h2>View the Data</h2>
 <pre class="r"><code>head(nfl_data)</code></pre>
 <pre><code>## ── nflverse play by play data ──────────────────────────────────────────────────</code></pre>
 <pre><code>## ℹ Data updated: 2026-08-13 08:26:02 EDT</code></pre>
@@ -399,9 +394,6 @@ nfl_data &lt;- load_pbp(2025)</code></pre>
 ## #   shotgun &lt;dbl&gt;, no_huddle &lt;dbl&gt;, qb_dropback &lt;dbl&gt;, qb_kneel &lt;dbl&gt;, …</code></pre>
 <pre class="r"><code>dim(nfl_data)</code></pre>
 <pre><code>## [1] 48771   372</code></pre>
-</div>
-<div id="select-variables" class="section level2">
-<h2>Select Variables</h2>
 <pre class="r"><code>nfl_small &lt;- nfl_data %&gt;%
   select(
     posteam,
@@ -424,9 +416,6 @@ nfl_data &lt;- load_pbp(2025)</code></pre>
 ## 4 ARI     NO      pass                11         3                 8     2
 ## 5 ARI     NO      pass               -11        NA                NA     1
 ## 6 ARI     NO      run                 -2        NA                NA     2</code></pre>
-</div>
-<div id="descriptive-statistics" class="section level2">
-<h2>Descriptive Statistics</h2>
 <div id="quantitative-variables" class="section level3">
 <h3>Quantitative Variables</h3>
 <pre class="r"><code>summary(nfl_small$yards_gained)</code></pre>
@@ -450,7 +439,6 @@ nfl_data &lt;- load_pbp(2025)</code></pre>
 ## 1416 1389 1303 1559 1401 1637 1405 1371 1488 1587 1394 1408 1612 1340 1512 1379 
 ##   LA  LAC   LV  MIA  MIN   NE   NO  NYG  NYJ  PHI  PIT  SEA   SF   TB  TEN  WAS 
 ## 1674 1500 1263 1255 1271 1694 1399 1434 1336 1429 1382 1581 1527 1420 1347 1329</code></pre>
-</div>
 </div>
 <div id="variable-transformation" class="section level2">
 <h2>Variable Transformation</h2>
