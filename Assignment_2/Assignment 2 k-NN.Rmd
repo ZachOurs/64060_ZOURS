@@ -1,0 +1,293 @@
+---
+title: "Assignment 2 - k-NN Classification"
+author: "Zach Ours"
+date: "2026-10-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(class)
+library(caret)
+```
+
+# Load the Data
+
+```{r}
+bank <- read.csv("UniversalBank.csv")
+head(bank)
+```
+
+# Prepare the Data
+
+Remove ID and ZIP Code because we do not want to use them as predictors
+
+```{r}
+bank <- bank[, !(names(bank) %in% c("ID", "ZIP.Code"))]
+```
+
+Dummy variables for education
+
+```{r}
+bank$Education_1 <- ifelse(bank$Education == 1, 1, 0)
+bank$Education_2 <- ifelse(bank$Education == 2, 1, 0)
+bank$Education_3 <- ifelse(bank$Education == 3, 1, 0)
+
+bank$Education <- NULL
+```
+
+
+Split the data into 60% training and 40% validation
+
+```{r}
+set.seed(123)
+
+train.index <- sample(1:nrow(bank), 0.6*nrow(bank))
+
+train <- bank[train.index, ]
+valid <- bank[-train.index, ]
+
+nrow(train)
+nrow(valid)
+```
+
+Separate the predictors from Personal Loan
+
+```{r}
+train.x <- train[, names(train) != "Personal.Loan"]
+valid.x <- valid[, names(valid) != "Personal.Loan"]
+
+train.y <- train$Personal.Loan
+valid.y <- valid$Personal.Loan
+```
+
+Normalize the predictors. The training data mean and standard deviation are also used to normalize the validation data
+
+```{r}
+means <- apply(train.x, 2, mean)
+sds <- apply(train.x, 2, sd)
+
+train.norm <- scale(train.x, center=means, scale=sds)
+valid.norm <- scale(valid.x, center=means, scale=sds)
+```
+
+# Question 1
+
+Create the new customer
+
+```{r}
+new.customer <- data.frame(
+  Age=40,
+  Experience=10,
+  Income=84,
+  Family=2,
+  CCAvg=2,
+  Mortgage=0,
+  Securities.Account=0,
+  CD.Account=0,
+  Online=1,
+  CreditCard=1,
+  Education_1=0,
+  Education_2=1,
+  Education_3=0
+)
+
+new.customer <- new.customer[, names(train.x)]
+
+new.norm <- scale(new.customer, center=means, scale=sds)
+```
+
+k = 1 to classify the customer
+
+```{r}
+pred1 <- knn(
+  train.norm,
+  new.norm,
+  factor(train.y),
+  k=1
+)
+
+pred1
+```
+
+Using k = 1, the new customer was classified as 0. This means the model predicts that this customer would not accept the personal loan.
+
+# Question 2
+
+Trying different values of k and calculate the validation accuracy for each one
+
+```{r}
+accuracy <- c()
+
+for(k in 1:20) {
+  
+  pred <- knn(
+    train.norm,
+    valid.norm,
+    factor(train.y),
+    k=k
+  )
+  
+  accuracy[k] <- mean(pred == valid.y)
+}
+
+accuracy
+```
+
+Find the k with the highest validation accuracy
+
+```{r}
+best.k <- which.max(accuracy)
+
+best.k
+max(accuracy)
+```
+
+I tested k values from 1 to 20 to see which one performed the best on the validation data. The highest accuracy was 96.35% at k = 1, so I chose k = 1 as the best value. Even though a smaller k can sometimes lead to overfitting, it gave the best results on the validation data.
+
+# Question 3
+
+Use the best k to classify the validation data
+
+```{r}
+valid.pred <- knn(
+  train.norm,
+  valid.norm,
+  factor(train.y),
+  k=best.k
+)
+
+confusionMatrix(
+  factor(valid.pred, levels=c("0","1")),
+  factor(valid.y, levels=c("0","1")),
+  positive="1"
+)
+```
+
+Using k = 1, the model had an accuracy of 96.35% on the validation data. It correctly classified 1,776 customers who did not accept the loan and 151 customers who did accept the loan. Overall, the model did a good job of classifying the validation data.
+
+# Question 4
+
+Use the best k to classify the new customer.
+
+```{r}
+new.pred <- knn(
+  train.norm,
+  new.norm,
+  factor(train.y),
+  k=best.k
+)
+
+new.pred
+```
+
+Using the selected value of k = 1, the new customer was classified as 0 again. This means the model predicts that the customer would not accept the personal loan.
+
+
+# Question 5
+
+Repartition the data into 50% training, 30% validation, and 20% test sets.
+
+```{r}
+set.seed(123)
+
+train.index <- sample(1:nrow(bank), 0.5*nrow(bank))
+
+remaining <- setdiff(1:nrow(bank), train.index)
+
+valid.index <- sample(remaining, 0.3*nrow(bank))
+
+test.index <- setdiff(remaining, valid.index)
+
+train2 <- bank[train.index, ]
+valid2 <- bank[valid.index, ]
+test2 <- bank[test.index, ]
+
+nrow(train2)
+nrow(valid2)
+nrow(test2)
+```
+
+Separate the predictors and Personal Loan variabl
+
+```{r}
+train2.x <- train2[, names(train2) != "Personal.Loan"]
+valid2.x <- valid2[, names(valid2) != "Personal.Loan"]
+test2.x <- test2[, names(test2) != "Personal.Loan"]
+
+train2.y <- train2$Personal.Loan
+valid2.y <- valid2$Personal.Loan
+test2.y <- test2$Personal.Loan
+```
+
+Normalize the predictors
+
+```{r}
+means2 <- apply(train2.x, 2, mean)
+sds2 <- apply(train2.x, 2, sd)
+
+train2.norm <- scale(train2.x, center=means2, scale=sds2)
+valid2.norm <- scale(valid2.x, center=means2, scale=sds2)
+test2.norm <- scale(test2.x, center=means2, scale=sds2)
+```
+
+Use the best k to classify the training, validation, and test data
+
+```{r}
+train.pred <- knn(
+  train2.norm,
+  train2.norm,
+  factor(train2.y),
+  k=best.k
+)
+
+valid.pred2 <- knn(
+  train2.norm,
+  valid2.norm,
+  factor(train2.y),
+  k=best.k
+)
+
+test.pred <- knn(
+  train2.norm,
+  test2.norm,
+  factor(train2.y),
+  k=best.k
+)
+```
+
+## Training Confusion Matrix
+
+```{r}
+confusionMatrix(
+  factor(train.pred, levels=c("0","1")),
+  factor(train2.y, levels=c("0","1")),
+  positive="1"
+)
+```
+
+## Validation Confusion Matrix
+
+```{r}
+confusionMatrix(
+  factor(valid.pred2, levels=c("0","1")),
+  factor(valid2.y, levels=c("0","1")),
+  positive="1"
+)
+```
+
+## Test Confusion Matrix
+
+```{r}
+confusionMatrix(
+  factor(test.pred, levels=c("0","1")),
+  factor(test2.y, levels=c("0","1")),
+  positive="1"
+)
+```
+
+After splitting the data into 50% training, 30% validation, and 20% test data, the model had 100% accuracy on the training data, 95.73% accuracy on the validation data, and 96.40% accuracy on the test data. The training accuracy was higher than the validation and test accuracy. The validation and test results were very similar, which shows that the model performed consistently on new data.
+
