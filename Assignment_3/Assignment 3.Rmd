@@ -1,0 +1,293 @@
+---
+title: "Assignment 3 - Naive Bayes Classification"
+author: "Zach Ours"
+date: "2026-10-18"
+output: html_document
+---
+
+# Introduction
+
+In this assignment, I used the Universal Bank dataset to examine whether customers accepted a personal loan offer. The dataset contains 5,000 customers. I focused on whether customers use online banking and whether they have a credit card issued by the bank. I used probability calculations and a Naive Bayes model to predict loan acceptance.
+
+
+```{r}
+bank <- read.csv("UniversalBank.csv")
+
+head(bank)
+
+names(bank)
+```
+
+# Split the Data
+
+I divided the dataset into 60% training data and 40% validation data.
+
+```{r}
+set.seed(123)
+
+train_rows <- sample(1:nrow(bank), 0.6 * nrow(bank))
+
+train <- bank[train_rows, ]
+validation <- bank[-train_rows, ]
+
+nrow(train)
+nrow(validation)
+```
+
+# Question A
+
+```{r}
+table_A <- with(train,
+  table(CreditCard, Personal.Loan, Online)
+)
+
+ftable(table_A)
+```
+
+This table shows the number of customers in each combination of credit card ownership, online banking usage, and personal loan acceptance.
+
+# Question B
+
+```{r}
+customers <- subset(train,
+  CreditCard == 1 & Online == 1
+)
+
+accepted <- sum(customers$Personal.Loan == 1)
+
+prob_B <- accepted / nrow(customers)
+
+prob_B
+```
+
+The probability of accepting the loan for customers who have a bank credit card and use online banking is:
+
+```{r}
+round(prob_B * 100, 2)
+```
+
+This percentage represents the proportion of customers with both characteristics who accepted the loan offer in the training data.
+
+# Question C
+
+```{r}
+table_online <- table(
+  train$Personal.Loan,
+  train$Online
+)
+
+table_online
+```
+
+```{r}
+table_cc <- table(
+  train$Personal.Loan,
+  train$CreditCard
+)
+
+table_cc
+```
+
+These tables show how loan acceptance differs based on online banking usage and credit card ownership.
+
+# Question D
+
+```{r}
+# i. P(CC = 1 | Loan = 1)
+
+p1 <- sum(train$CreditCard == 1 &
+          train$Personal.Loan == 1) /
+      sum(train$Personal.Loan == 1)
+
+# ii. P(Online = 1 | Loan = 1)
+
+p2 <- sum(train$Online == 1 &
+          train$Personal.Loan == 1) /
+      sum(train$Personal.Loan == 1)
+
+# iii. P(Loan = 1)
+
+p3 <- mean(train$Personal.Loan == 1)
+
+# iv. P(CC = 1 | Loan = 0)
+
+p4 <- sum(train$CreditCard == 1 &
+          train$Personal.Loan == 0) /
+      sum(train$Personal.Loan == 0)
+
+# v. P(Online = 1 | Loan = 0)
+
+p5 <- sum(train$Online == 1 &
+          train$Personal.Loan == 0) /
+      sum(train$Personal.Loan == 0)
+
+# vi. P(Loan = 0)
+
+p6 <- mean(train$Personal.Loan == 0)
+
+probabilities <- data.frame(
+  Probability = c(
+    "P(CC=1 | Loan=1)",
+    "P(Online=1 | Loan=1)",
+    "P(Loan=1)",
+    "P(CC=1 | Loan=0)",
+    "P(Online=1 | Loan=0)",
+    "P(Loan=0)"
+  ),
+  Value = round(c(p1, p2, p3, p4, p5, p6), 4)
+)
+
+probabilities
+```
+
+These calculations show the probability of credit card ownership and online banking usage among customers who accepted or rejected the loan.
+
+# Question E
+
+```{r}
+loan_yes <- p1 * p2 * p3
+
+loan_no <- p4 * p5 * p6
+
+prob_E <- loan_yes / (loan_yes + loan_no)
+
+prob_E
+
+round(prob_E * 100, 2)
+```
+
+The Naive Bayes probability is calculated by multiplying the conditional probabilities and prior probability for each loan outcome, then dividing the loan acceptance result by the sum of both outcomes.
+
+# Question F
+
+```{r}
+comparison <- data.frame(
+  Method = c("Pivot Table", "Naive Bayes"),
+  Probability = round(c(prob_B, prob_E), 4)
+)
+
+comparison
+
+difference <- abs(prob_B - prob_E)
+
+difference
+```
+
+The pivot table calculates the actual proportion of loan acceptances among customers with both characteristics in the training data. Naive Bayes estimates the probability by assuming that credit card ownership and online banking usage are conditionally independent given loan acceptance.
+
+The pivot table gives the direct observed probability for this specific customer group. If the group has enough observations, it may provide a more accurate estimate without relying on the independence assumption. However, Naive Bayes can sometimes provide a more stable estimate when the group is small.
+
+Neither method is guaranteed to predict future customers more accurately without checking validation data.
+
+# Question G
+
+```{r}
+library(e1071)
+```
+
+```{r}
+# Prepare training data
+
+nb_train <- data.frame(
+  Loan = factor(train$Personal.Loan,
+                levels = c(0, 1)),
+  CC = factor(train$CreditCard,
+              levels = c(0, 1)),
+  Online = factor(train$Online,
+                  levels = c(0, 1))
+)
+
+# Train Naive Bayes model
+
+model <- naiveBayes(Loan ~ CC + Online,
+                    data = nb_train)
+
+model
+```
+
+The model output shows the prior probabilities for loan acceptance and the conditional probabilities for credit card ownership and online banking usage.
+
+The entries needed to calculate the probability are:
+
+- P(Loan = 1)
+- P(Loan = 0)
+- P(CC = 1 | Loan = 1)
+- P(CC = 1 | Loan = 0)
+- P(Online = 1 | Loan = 1)
+- P(Online = 1 | Loan = 0)
+
+```{r}
+# Predict for a customer with CC=1 and Online=1
+
+new_customer <- data.frame(
+  CC = factor(1, levels = c(0, 1)),
+  Online = factor(1, levels = c(0, 1))
+)
+
+prediction <- predict(
+  model,
+  new_customer,
+  type = "raw"
+)
+
+prediction
+```
+
+```{r}
+# Compare the results
+
+model_probability <- prediction[1, "1"]
+
+final_comparison <- data.frame(
+  Method = c("Manual Naive Bayes",
+             "Naive Bayes Model"),
+  Probability = round(
+    c(prob_E, model_probability), 4
+  )
+)
+
+final_comparison
+```
+
+The predicted probability from the Naive Bayes model should match the manually calculated probability from Question E, aside from possible rounding differences. 
+
+# Validation
+
+```{r}
+nb_validation <- data.frame(
+  Loan = factor(validation$Personal.Loan,
+                levels = c(0, 1)),
+  CC = factor(validation$CreditCard,
+              levels = c(0, 1)),
+  Online = factor(validation$Online,
+                  levels = c(0, 1))
+)
+
+predicted <- predict(model, nb_validation)
+
+confusion <- table(
+  Actual = nb_validation$Loan,
+  Predicted = predicted
+)
+
+confusion
+
+accuracy <- mean(predicted == nb_validation$Loan)
+
+accuracy
+```
+
+The confusion matrix shows how many customers were classified correctly and incorrectly. The accuracy represents the percentage of correct predictions on the validation data.
+
+Because only 9.6% of customers accepted the loan in the full dataset, accuracy alone may not show how well the model identifies actual loan acceptors.
+
+# Conclusion
+
+In this assignment, I used the Universal Bank dataset to explore how online banking and credit card ownership relate to personal loan acceptance. I created pivot tables, calculated conditional probabilities, and used Naive Bayes to estimate the probability of a customer accepting a loan.
+
+The pivot table and Naive Bayes methods may give different results because Naive Bayes assumes conditional independence between the two predictors. I also trained a Naive Bayes model in R and compared its output with my manual calculation.
+
+Overall, this assignment helped me understand how probability can be used for classification and how Naive Bayes can be applied to a business problem.
+
+
+
