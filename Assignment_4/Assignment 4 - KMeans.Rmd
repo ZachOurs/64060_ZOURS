@@ -1,0 +1,134 @@
+---
+title: "Assignment 4 - k-Means Clustering"
+author: "Zach Ours"
+date: "2026-10-28"
+output: html_document
+---
+
+
+# Introduction
+In this assignment, I used k-Means clustering to group 21 pharmaceutical companies based on their financial information. The goal was to see which companies have similar financial characteristics.
+
+
+# Question A
+I used the nine financial variables to create the clusters. I standardized the data because the variables have different scales. I used k-Means because it groups companies with similar financial information. All nine variables were given equal weight after standardizing.
+
+```{r}
+pharma <- read.csv("Pharmaceuticals.csv")
+
+head(pharma)
+```
+
+```{r}
+financial <- pharma[, 3:11]
+
+financial_scaled <- scale(financial)
+
+head(financial_scaled)
+```
+
+I used the elbow method to help decide how many clusters to create.
+
+```{r}
+set.seed(123)
+
+wss <- numeric(8)
+
+for (k in 1:8) {
+  model <- kmeans(financial_scaled, centers = k, nstart = 25)
+  wss[k] <- model$tot.withinss
+}
+
+plot(1:8, wss,
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "Within-Cluster Sum of Squares",
+     main = "Elbow Method")
+```
+
+I chose three clusters because this gave me a reasonable number of groups to compare without having too many small clusters. I used 25 random starting points to help get a consistent result.
+
+```{r}
+set.seed(123)
+
+km <- kmeans(financial_scaled, centers = 3, nstart = 25)
+
+pharma$Cluster <- km$cluster
+
+table(pharma$Cluster)
+```
+
+```{r}
+pharma[, c("Name", "Cluster")]
+```
+
+# Question B
+
+I calculated the average financial values for each cluster to compare the groups.
+
+```{r}
+cluster_means <- aggregate(financial,
+                           by = list(Cluster = pharma$Cluster),
+                           FUN = mean)
+
+round(cluster_means, 2)
+```
+
+```{r}
+round(km$centers, 2)
+```
+
+Cluster 1 had lower profitability and the highest average P/E ratio. Cluster 2 had the largest companies and the highest average return on equity and profit margin. Cluster 3 had smaller companies with the highest revenue growth and leverage. This shows that each cluster has different financial strengths and weaknesses.
+
+# Question C
+
+I compared the clusters using median recommendations, headquarters locations, and stock exchanges. These variables were not used to create the clusters.
+
+```{r}
+table(pharma$Cluster, pharma$Median_Recommendation)
+```
+
+```{r}
+table(pharma$Cluster, pharma$Location)
+```
+
+```{r}
+table(pharma$Cluster, pharma$Exchange)
+```
+
+Cluster 1 had companies from several different countries, and all four were listed on the NYSE. Cluster 2 was mostly made up of US companies, and all 11 were listed on the NYSE. Cluster 3 was also mostly US companies, but it included companies listed on NASDAQ and AMEX. There were some differences in recommendations, but no clear pattern across all three clusters.
+
+# Question D
+I used the average financial values to give each cluster a name based on its characteristics.
+
+```{r}
+for (i in 1:3) {
+  cat("\nCluster", i, "\n")
+
+  cat("Average Market Cap:",
+      round(cluster_means$Market_Cap[i], 2), "\n")
+
+  cat("Average ROE:",
+      round(cluster_means$ROE[i], 2), "\n")
+
+  cat("Average Revenue Growth:",
+      round(cluster_means$Rev_Growth[i], 2), "\n")
+}
+```
+
+```{r}
+pharma$Cluster_Name <- c(
+  "Lower Profitability Companies",
+  "Large Profitable Companies",
+  "Smaller Growth Companies"
+)[pharma$Cluster]
+
+pharma[, c("Name", "Cluster", "Cluster_Name")]
+```
+
+I named Cluster 1 Lower Profitability Companies because it had the lowest average profit margin. Cluster 2 was named Large Profitable Companies because it had the highest market capitalization and return on equity. Cluster 3 was named Smaller Growth Companies because it had the smallest average market capitalization but the highest revenue growth.
+
+# Conclusion
+
+The k-Means analysis grouped the 21 pharmaceutical companies into three clusters based on nine financial variables. The results showed differences in company size, profitability, and growth. Overall, clustering helped make it easier to compare the companies and understand their financial characteristics.
+
